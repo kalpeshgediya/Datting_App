@@ -14,5 +14,7 @@ urlpatterns = [
     path('verify_login_otp_mobile',VerifyPhoneOTPView.as_view(),name='login-otp-verify'),
     path('logout',knox_views.LogoutView.as_view(), name='logout'),
     path('user_get', User_get_view.as_view({'get':'list'}), name='user_get'),
-    path('user_update', User_update_view.as_view({'get':'retrieve','put':'update'}), name='user_update')
+    path('user_update', User_update_view.as_view({'get':'retrieve','put':'update'}), name='user_update'),
+    path('favourite_user', Favourite_user_view.as_view({'get':'list','post':'create'}), name='favourite_user'),
+    path('chatting', Chatting_view.as_view({'get':'list','post':'create','put':'update',"delete":"destroy"}), name='chatting')
 ]

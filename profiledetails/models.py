@@ -447,5 +447,17 @@ class User(AbstractBaseUser):
         return self.user
     
 class Upload_image(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="user_model")
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="image")
     upload_image = models.ImageField(upload_to='images',null=True,blank=True)
+
+class Favourite(models.Model):
+    who_likes_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="who_likes")
+    likes_by_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="likes_by")
+    likes_unlikes = models.BooleanField(default=True)
+
+class Chatting(models.Model):
+    sender_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="sender")
+    receiver_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="receiver")
+    seen = models.BooleanField(default=False)
+    message = models.CharField(max_length=2000,null=True,blank=True)
+    date_time = models.DateTimeField(null=True,blank=True)

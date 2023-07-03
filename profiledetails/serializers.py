@@ -5,6 +5,10 @@ from django.contrib.auth import get_user_model
 from .models import *
 User = get_user_model()
 # Create your serializers here.
+class Upload_image_seriliazer(serializers.ModelSerializer):
+    class Meta:
+        model = Upload_image
+        fields = "__all__"
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -19,7 +23,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             "interest_in": {"required": True},
             "sexual_orientation_in": {"required": True},
             "user_dob": {"required": True},
-            "image": {"required": True},
         }
         
     def create(self, validated_data):
@@ -31,3 +34,13 @@ class User_get_serializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields  = '__all__'
+
+class Favourite_serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favourite
+        fields = "__all__"
+
+class Chatting_serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chatting
+        fields = "__all__"

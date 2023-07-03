@@ -29,6 +29,7 @@ from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets
+from itertools import chain
 import pyotp
 import base64
 
@@ -43,6 +44,7 @@ class RegisterView(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+
         return Response({
             'response': serializer.data,
             'scucess': True,
@@ -124,19 +126,6 @@ class VerifyPhoneOTPView(APIView):
         except Exception as e:
             print(e)
             return Response({'status': False,'message': str(e),'details': 'Login Failed'})
-
-# logout api view
-# class LogoutView(APIView):
-#     # permission_classes = (permissions.IsAuthenticated,)
-#     authentication_classes = (TokenAuthentication,)
-#     permission_classes = [IsAuthenticated,]
-
-#     def post(self, request, format=None):
-#         try:
-#             request.user.auth_token.delete()
-#             return Response({'message': 'Logout successfully','status': status.HTTP_200_OK,})
-#         except Exception as e:
-#             return Response({'message': str(e),'status': status.HTTP_400_BAD_REQUEST,})
         
 class User_get_view(ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -216,5 +205,69 @@ class User_update_view(ModelViewSet):
         queryset.save()
         return Response({"message":"User data update Successfully"},status=status.HTTP_200_OK)
     
+class Favourite_user_view(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = Favourite_serializer
+    queryset = Favourite.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        user = self.request.user
+        queryset = Favourite.objects.filter(likes_by_user_id = user.id,likes_unlikes=True).values()
+        return Response(queryset,status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        who_likes_user = request.data['who_likes_user_id']
+        user = self.request.user
+        if Favourite.objects.filter(who_likes_user=who_likes_user,likes_by_user_id = user.id).exists():
+            querysets = Favourite.objects.filter(who_likes_user=who_likes_user,likes_by_user_id = user.id).values()
+            obj = Favourite.objects.get(id=querysets[0]['id'])
+            if obj.likes_unlikes == False:
+                obj.likes_unlikes = True
+                obj.save()
+                return Response({"message":"like"},status=status.HTTP_200_OK)
+            if obj.likes_unlikes == True:
+                obj.likes_unlikes = False
+                obj.save()
+                return Response({"message":"unlike"},status=status.HTTP_200_OK)
+        else:
+            queryset = Favourite.objects.create(who_likes_user_id = who_likes_user,likes_by_user_id = user.id)
+            return Response({"message":"User like successfully"},status=status.HTTP_200_OK)
+        
+class Chatting_view(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = Chatting_serializer
+    queryset = Chatting.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        user = self.request.user.id
+        queryset1 = Chatting.objects.filter(sender_user_id =user,seen = True).values()
+        queryset2 = Chatting.objects.filter(receiver_user =user,seen = True).values()
+        result_list = list(chain(queryset1, queryset2))
+        return Response(result_list,status=status.HTTP_200_OK)
     
+    def create(self, request, *args, **kwargs):
+        receiver_user = request.data['receiver_user_id']
+        message = request.data['message']
+        sender_user = self.request.user.id
+        queryset = Chatting.objects.create(sender_user_id=sender_user,
+                                           receiver_user_id = receiver_user,
+                                           message = message,
+                                           date_time=datetime.now())
+        serializer =self.serializer_class(queryset)
+        return Response(serializer.data,status=status.HTTP_200_OK)
     
+    def update(self, request, *args, **kwargs):
+        id = request.data['id']
+        queryset = Chatting.objects.get(id=id)
+        queryset.seen=True
+        queryset.save()
+        serializer =self.serializer_class(queryset)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def destroy(self, request, *args, **kwargs):
+        id = request.data['id']
+        for ids in id:
+            Chatting.objects.get(id=ids).delete()
+        return Response({"message":"message deleted"},status=status.HTTP_200_OK)

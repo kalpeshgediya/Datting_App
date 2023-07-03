@@ -9,3 +9,5 @@ User = get_user_model()
 
 admin.site.register(User)
 admin.site.register(Upload_image)
+admin.site.register(Favourite)
+admin.site.register(Chatting)
