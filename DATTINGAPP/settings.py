@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'DATTINGAPP.wsgi.application'
 DATABASES = {
     'default':{
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'dbdatingapp',
+            'NAME': 'datingappdb',
             'USER': 'postgres',
             'PASSWORD': '12345678',
             'HOST': 'localhost',
