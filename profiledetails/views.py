@@ -38,7 +38,7 @@ User = get_user_model()
 class RegisterView(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
-
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -50,6 +50,16 @@ class RegisterView(viewsets.ModelViewSet):
             'scucess': True,
             'message': 'User created successfully',
             'status': status.HTTP_201_CREATED,})
+        
+class Search_user_View(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    
+    def list(self, request, *args, **kwargs):
+        user_id = request.GET.get('user_id')
+        queryset = User.objects.get(id=user_id)
+        serializer =self.serializer_class(queryset)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
 def send_otp(phone):
     """
@@ -126,17 +136,6 @@ class VerifyPhoneOTPView(APIView):
         except Exception as e:
             print(e)
             return Response({'status': False,'message': str(e),'details': 'Login Failed'})
-        
-class User_get_view(ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = User_get_serializer
-    queryset = User.objects.all()
-    lookup_field = "id"
-    
-    def list(self, request, *args, **kwargs):
-        queryset=User.objects.get(id=request.user.id)
-        serializer = self.serializer_class(queryset)
-        return Response(serializer.data,status=status.HTTP_200_OK)
     
 class User_get_view(ModelViewSet):
     authentication_classes = (TokenAuthentication,)
@@ -204,6 +203,43 @@ class User_update_view(ModelViewSet):
         queryset.work_out=work_out
         queryset.save()
         return Response({"message":"User data update Successfully"},status=status.HTTP_200_OK)
+
+class Upload_image_view(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = Upload_image_seriliazer
+    queryset = Upload_image.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        user = self.request.user.id
+        queryset = Upload_image.objects.filter(user=user)
+        serializer =self.serializer_class(queryset,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    # def create(self, request, *args, **kwargs):
+    #     upload_image = request.FILES.get('upload_image')
+    #     print('upload_image--------',upload_image)
+    #     user = self.request.user.id
+    #     for images in upload_image:
+    #         queryset = Upload_image.objects.create(user_id=user,upload_image=images)
+    #     serializer =self.serializer_class(queryset,many=True)
+    #     return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    # def create(self, request, *args, **kwargs):
+    #         upload_image = request.FILES.get('upload_image')
+    #         print('upload_image--------',upload_image)
+    #         user = self.request.user.id
+    #         for images in upload_image:
+    #             queryset = Upload_image(upload_image=images)
+    #             print('queryset----',queryset)
+    #             queryset.save()
+    #             queryset =Upload_image.objects.get(id=queryset.id)
+    #             queryset.user=user
+    #             queryset.save()
+    #             print('queryset1----',queryset)
+    #         serializer =self.serializer_class(queryset,many=True)
+    #         return Response(serializer.data,status=status.HTTP_200_OK)
+
     
 class Favourite_user_view(ModelViewSet):
     authentication_classes = (TokenAuthentication,)
@@ -232,6 +268,7 @@ class Favourite_user_view(ModelViewSet):
                 return Response({"message":"unlike"},status=status.HTTP_200_OK)
         else:
             queryset = Favourite.objects.create(who_likes_user_id = who_likes_user,likes_by_user_id = user.id)
+            queryset1 = Notification.objects.create(favourite_id=queryset.id)    
             return Response({"message":"User like successfully"},status=status.HTTP_200_OK)
         
 class Chatting_view(ModelViewSet):
@@ -242,11 +279,11 @@ class Chatting_view(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         user = self.request.user.id
-        queryset1 = Chatting.objects.filter(sender_user_id =user,seen = True).values()
-        queryset2 = Chatting.objects.filter(receiver_user =user,seen = True).values()
+        queryset1 = Chatting.objects.filter(sender_user_id =user).values()
+        queryset2 = Chatting.objects.filter(receiver_user =user).values()
         result_list = list(chain(queryset1, queryset2))
         return Response(result_list,status=status.HTTP_200_OK)
-    
+      
     def create(self, request, *args, **kwargs):
         receiver_user = request.data['receiver_user_id']
         message = request.data['message']
@@ -255,6 +292,7 @@ class Chatting_view(ModelViewSet):
                                            receiver_user_id = receiver_user,
                                            message = message,
                                            date_time=datetime.now())
+        queryset1 = Notification.objects.create(chatting_id=queryset.id)
         serializer =self.serializer_class(queryset)
         return Response(serializer.data,status=status.HTTP_200_OK)
     
@@ -271,3 +309,54 @@ class Chatting_view(ModelViewSet):
         for ids in id:
             Chatting.objects.get(id=ids).delete()
         return Response({"message":"message deleted"},status=status.HTTP_200_OK)
+    
+class Favourite_notification_view(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = Notification_serializer
+    queryset = Notification.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        user = self.request.user.id
+        queryset = Notification.objects.filter(favourite__who_likes_user_id=user)
+        serializer =self.serializer_class(queryset,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+class Favourite_seen_view(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = Favourite_serializer
+    queryset = Favourite.objects.all()
+    
+    def update(self, request, *args, **kwargs):
+        likes_id = request.data['likes_id']
+        for ids in likes_id:
+            queryset = Favourite.objects.get(id=ids)
+            queryset.favourite_seen=True
+            queryset.save()
+        return Response({"message":"likes seen"},status=status.HTTP_200_OK)
+
+class Chatting_seen_view(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = Chatting_serializer
+    queryset = Chatting.objects.all()
+    
+    def update(self, request, *args, **kwargs):
+        chatting_id = request.data['chatting_id']
+        for ids in chatting_id:
+            queryset = Chatting.objects.get(id=ids)
+            queryset.chatting_seen=True
+            queryset.save()
+        return Response({"message":"chatting seen"},status=status.HTTP_200_OK)
+    
+class Favourite_count_view(ModelViewSet):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = Favourite_serializer
+    queryset = Favourite.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        user = self.request.user.id
+        queryset = Favourite.objects.filter(who_likes_user_id=user,favourite_seen=False).count()
+        return Response({'count':queryset},status=status.HTTP_200_OK)

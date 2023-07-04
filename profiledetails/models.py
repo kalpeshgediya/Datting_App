@@ -435,29 +435,32 @@ class User(AbstractBaseUser):
     @property
     def is_active(self):
         return self.active
-
     @property
     def is_admin(self):
         return self.admin
-    @property
-    def is_doctor(self):
-        return self.doctor
     @property
     def is_user(self):
         return self.user
     
 class Upload_image(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="image")
-    upload_image = models.ImageField(upload_to='images',null=True,blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="image",null=True,blank=True)
+    upload_image = models.FileField(upload_to='images',null=True,blank=True)
 
 class Favourite(models.Model):
     who_likes_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="who_likes")
     likes_by_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="likes_by")
     likes_unlikes = models.BooleanField(default=True)
+    favourite_seen = models.BooleanField(default=False,null=True,blank=True)
 
 class Chatting(models.Model):
     sender_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="sender")
     receiver_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="receiver")
-    seen = models.BooleanField(default=False)
+    chatting_seen = models.BooleanField(default=False,null=True,blank=True)
     message = models.CharField(max_length=2000,null=True,blank=True)
     date_time = models.DateTimeField(null=True,blank=True)
+
+class Notification(models.Model):
+    favourite = models.ForeignKey(Favourite,on_delete=models.CASCADE,null=True,blank=True)
+    chatting =  models.ForeignKey(Chatting,on_delete=models.CASCADE,null=True,blank=True)
+    favourite_notification = models.BooleanField(default=True)
+    chatting_notification = models.BooleanField(default=True)

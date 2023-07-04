@@ -44,3 +44,8 @@ class Chatting_serializer(serializers.ModelSerializer):
     class Meta:
         model = Chatting
         fields = "__all__"
+        
+class Notification_serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = "__all__"
