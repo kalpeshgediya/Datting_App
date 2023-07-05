@@ -39,4 +39,6 @@ urlpatterns = [
     
     path('favourite_count', Favourite_count_view.as_view({'get':'list'}), name='favourite_count'),
     
+    path('facebook/', FacebookSocialAuthView.as_view())
+    
 ]

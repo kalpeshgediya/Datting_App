@@ -360,3 +360,19 @@ class Favourite_count_view(ModelViewSet):
         user = self.request.user.id
         queryset = Favourite.objects.filter(who_likes_user_id=user,favourite_seen=False).count()
         return Response({'count':queryset},status=status.HTTP_200_OK)
+    
+    
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
+from rest_framework.generics import GenericAPIView
+
+@permission_classes((AllowAny, ))
+class FacebookSocialAuthView(GenericAPIView):
+
+    serializer_class = FacebookSocialAuthSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = ((serializer.validated_data)['auth_token'])
+        return Response(data, status=status.HTTP_200_OK)
